@@ -20,12 +20,55 @@ class UserRepository
     }
 
     public function insertUser($name, $email, $password, $prenom, $age, $etat_civil) {
+
+        $errors = [];
+        if (!preg_match("/^[a-zA-Z\s]+$/", $name)) {
+            $errors[] = "Name must only contain letters and spaces.";
+        }
+        if (!preg_match("/^[a-zA-Z\s]+$/", $prenom)) {
+            $errors[] = "Surname must only contain letters and spaces.";
+        }
+
+        if (empty($name) || strlen($name) > 100) {
+            $errors[] = "Invalid name - either empty or too long.";
+        }
+        if (empty($prenom) || strlen($prenom) > 100) {
+            $errors[] = "Invalid surname - either empty or too long.";
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Invalid email format";
+        }
+
+        if (!filter_var($age, FILTER_VALIDATE_INT,
+            array("options" => array("min_range" => 1))))
+        {
+            $errors[] = "Invalid age";
+        }
+
+        if (strlen($password) < 6) {
+            $errors[] = "Password must be at least 6 characters long";
+        }
+
+        $valid_etat_civil = ['single', 'married', 'divorced'];
+        if (!in_array($etat_civil, $valid_etat_civil)) {
+            $errors[] = "Invalid etat civil";
+        }
+
+        if (!empty($errors)) {
+            return ['success' => false, 'errors' => $errors];
+        }
+
         $stmt = $this->connection->prepare("INSERT INTO utilisateur (nom, prenom, age, mail, password, etat_civil) VALUES (?, ?, ?, ?, ?, ?)");
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         $stmt->bind_param("ssiss", $name, $prenom, $age, $email, $passwordHash, $etat_civil);
         $stmt->execute();
-        return $stmt->insert_id;
+        if ($stmt->error) {
+            return ['success' => false, 'errors' => ['db_error' => $stmt->error]];
+        }
+        return ['success' => true, 'insert_id' => $stmt->insert_id];
     }
+
 
     public function AfficherUser($id = null) {
         try {
