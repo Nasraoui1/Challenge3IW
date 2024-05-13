@@ -24,8 +24,13 @@ class UserController
     public function deleteUserById($id) {
         return $this->userRepository->deleteUserById($id);
     }
-    public function modifyUserById($User, $id) {
+    public function modifyUser($User, $id) {
         return $this->userRepository->modifyUserById($User,$id);
     }
+
+    public function affichage(){
+        return $this->userRepository->AfficherUser();
+    }
+
 
 }
